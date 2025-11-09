@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Shockwave — Scan · Poll · Share</title>
+  <style>
+    :root {
+      --bg:#0b1020; --card:#101833; --ink:#eaf0ff; --muted:#9fb0ff; --accent:#6aa1ff; --ok:#33d69f; --warn:#ffb86c; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body {margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif; background:radial-gradient(1000px 600px at 70% -10%, #1a2a6c22, transparent), var(--bg); color:var(--ink)}
+    .wrap{max-width:980px; margin:0 auto; padding:20px}
+    header{display:flex; gap:18px; align-items:center; padding:18px 0}
+    .badge{font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--bg); background:linear-gradient(90deg, var(--accent), #a66bff); padding:8px 10px; border-radius:999px}
+    h1{margin:0; font-weight:800; line-height:1.05}
+    .subtitle{color:var(--muted); margin-top:6px}
+    .grid{display:grid; gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:1.5fr 1fr}}
+
+    .card{background:linear-gradient(180deg, #17224a, #0f1533); border:1px solid #26356a; border-radius:18px; box-shadow:0 10px 40px #0005; padding:16px}
+    .hero{display:grid; gap:10px}
+    .store{display:flex; align-items:center; gap:12px}
+    .store-logo{width:44px; height:44px; border-radius:10px; background:#2b3e7a; display:grid; place-items:center; font-weight:800}
+
+    /* gallery */
+    .gallery{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px}
+    .gallery img{width:100%; height:120px; object-fit:cover; border-radius:12px; border:1px solid #2a3e7e}
+
+    /* counters */
+    .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px}
+    .stat{background:#0e1430; border:1px solid #2a3e7e; border-radius:12px; padding:12px}
+    .stat .k{font-size:24px; font-weight:800}
+    .stat .l{color:var(--muted); font-size:12px}
+
+    /* poll */
+    .poll{display:grid; gap:8px; margin-top:6px}
+    .poll label{display:flex; gap:10px; align-items:center; background:#0e1430; border:1px solid #2a3e7e; padding:10px 12px; border-radius:12px; cursor:pointer}
+    .poll input{accent-color:var(--accent)}
+    .cta{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+    button, .ghost{appearance:none; border:none; background:var(--accent); color:#0a0f20; padding:12px 16px; font-weight:800; border-radius:12px; cursor:pointer}
+    .ghost{background:transparent; border:1px solid #3a4fa0; color:var(--ink)}
+
+    .progress{height:10px; background:#0f1430; border:1px solid #2a3e7e; border-radius:999px; overflow:hidden}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg, #6aa1ff, #9a6bff)}
+
+    .share-tip{font-size:13px; color:var(--muted)}
+
+    .footer{margin:40px 0 20px; text-align:center; color:#7a8cff; font-size:12px}
+    a{color:#c8d6ff}
+    .hidden{display:none}
+    /* Builder UI */
+    .fab{position:fixed; right:18px; bottom:18px; background:var(--accent); color:#0a0f20; border:none; border-radius:999px; padding:14px 16px; font-weight:800; cursor:pointer; box-shadow:0 10px 30px #0007}
+    .builder{position:fixed; right:18px; bottom:80px; width:360px; max-width:92vw; background:#0e1430; border:1px solid #2a3e7e; border-radius:16px; box-shadow:0 12px 40px #0009; padding:14px; display:none}
+    .builder h3{margin:0 0 8px 0}
+    .builder label{font-size:12px; color:var(--muted)}
+    .builder input, .builder textarea{width:100%; background:#0b1130; color:var(--ink); border:1px solid #2a3e7e; border-radius:10px; padding:10px; margin:6px 0 10px}
+    .builder .row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    .builder .cta{display:flex; gap:8px; flex-wrap:wrap}
+    .builder .small{font-size:12px; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="badge">QR Shockwave · Demo</div>
+    </header>
+
+    <!-- Floating Builder Button -->
+    <button class="fab" id="fabBuilder" title="Open builder">Builder</button>
+
+    <!-- Builder Panel -->
+    <div class="builder" id="builderPanel">
+      <h3>Campaign Builder</h3>
+      <div class="small">Generate links for regions/countries without editing code.</div>
+      <div class="row">
+        <div>
+          <label>Campaign ID</label>
+          <input id="b_id" placeholder="store-001" />
+        </div>
+        <div>
+          <label>City/Region</label>
+          <input id="b_city" placeholder="Willemstad" />
+        </div>
+      </div>
+      <label>Store Name</label>
+      <input id="b_name" placeholder="Bakery Luna" />
+      <label>Tagline</label>
+      <input id="b_tag" placeholder="Scan · Vote · Share — Help this shop trend today." />
+      <label>Contact (mailto: or https:)</label>
+      <input id="b_contact" placeholder="mailto:join@youragency.example" />
+      <label>Images (comma-separated URLs, first 3 used)</label>
+      <textarea id="b_img" rows="3" placeholder="https://.../1.jpg, https://.../2.jpg, https://.../3.jpg"></textarea>
+      <div class="cta">
+        <button id="b_make">Create Link</button>
+        <button class="ghost" id="b_copy">Copy Link</button>
+        <button class="ghost" id="b_download">Download Static</button>
+      </div>
+      <div class="small" id="b_out"></div>
+    </div>
+
+    <section class="grid">
+      <!-- LEFT: Promo + Gallery + Poll -->
+      <div class="card hero">
+        <div class="store">
+          <div class="store-logo" id="storeLogo">QR</div>
+          <div>
+            <h1 id="storeName">Sample Store — Willemstad</h1>
+            <div class="subtitle" id="storeTag">Scan · Vote · Share — Help this shop trend today.</div>
+          </div>
+        </div>
+
+        <div class="gallery" id="gallery">
+          <img alt="Store photo 1" src="https://images.unsplash.com/photo-1521334726092-b509a19597c6?q=80&w=800&auto=format&fit=crop" />
+          <img alt="Store photo 2" src="https://images.unsplash.com/photo-1490111718993-d98654ce6cf7?q=80&w=800&auto=format&fit=crop" />
+          <img alt="Store photo 3" src="https://images.unsplash.com/photo-1514996937319-344454492b37?q=80&w=800&auto=format&fit=crop" />
+        </div>
+
+        <div class="poll card" style="padding:12px; margin-top:10px">
+          <div style="font-weight:800">Quick Poll</div>
+          <div class="share-tip">Would you visit this store in the next 7 days?</div>
+          <label><input type="radio" name="vote" value="yes"/> Yes — looks great</label>
+          <label><input type="radio" name="vote" value="maybe"/> Maybe — want a discount</label>
+          <label><input type="radio" name="vote" value="no"/> Not my style</label>
+          <div class="cta">
+            <button id="submitVote">Submit vote</button>
+            <button class="ghost" id="seeResults">See results</button>
+          </div>
+          <div class="progress"><div class="bar" id="voteBar"></div></div>
+          <div class="share-tip" id="voteMsg"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live Impact + Viral Share -->
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+          <div>
+            <div style="font-weight:800; font-size:18px">Live Impact</div>
+            <div class="share-tip">Real-time stats for this QR campaign</div>
+          </div>
+          <div class="badge" id="campaignIdBadge">ID: —</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k" id="scansTotal">0</div><div class="l">Total scans</div></div>
+          <div class="stat"><div class="k" id="uniqueScans">0</div><div class="l">Unique devices</div></div>
+          <div class="stat"><div class="k" id="shares">0</div><div class="l">Shares</div></div>
+        </div>
+
+        <div style="margin-top:14px; font-weight:700">Amplify the signal</div>
+        <div class="share-tip">Share this page to unlock full results and help this shop trend locally.</div>
+        <div class="cta">
+          <button id="shareBtn">Share via device</button>
+          <button class="ghost" id="whatsBtn">Share on WhatsApp</button>
+          <button class="ghost" id="copyBtn">Copy link</button>
+        </div>
+        <div class="share-tip" id="shareMsg"></div>
+
+        <div class="card" style="margin-top:14px">
+          <div style="font-weight:800">Owner Preview</div>
+          <div class="share-tip">This card appears after the first 50 scans to shock the owner.</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px">
+            <div class="stat"><div class="k" id="ownerScans">0</div><div class="l">Scans (7 days)</div></div>
+            <div class="stat"><div class="k" id="ownerVotes">0</div><div class="l">Positive intent</div></div>
+          </div>
+          <div class="cta">
+            <a id="ownerCta" class="ghost" href="#" target="_blank">I want this for my shop</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">Privacy-friendly demo. No servers, no cookies; just localStorage. Replace images/text and deploy anywhere.
+      · Built for DS360 street campaigns.</div>
+  </div>
+
+<script>
+// === QR Shockwave — Frontend-only demo ===
+// Campaign config via URL params: ?id=store-001&name=Bakery%20Luna&city=Willemstad&img=URL1,URL2,URL3
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const CFG = window.__CFG || {};
+  const campaignId = (CFG.id || qs.get('id') || 'demo-001');
+  const storeName = (CFG.name || qs.get('name') || 'Sample Store — Willemstad');
+  const city = (CFG.city || qs.get('city') || '');
+  const ownerLink = (CFG.contact || qs.get('contact') || 'mailto:join@youragency.example?subject=I%20want%20a%20QR%20Shockwave&body=Tell%20me%20pricing%20and%20setup.');
+  const imgs = ((CFG.img || qs.get('img') || '')+ '').split(',').filter(Boolean);
+  const storeTag = (CFG.tag || qs.get('tag') || 'Scan · Vote · Share — Help this shop trend today.');
+  const pageUrl = location.origin + location.pathname + location.search;
+
+  // DOM refs
+  const el = (id)=>document.getElementById(id);
+  el('campaignIdBadge').textContent = 'ID: ' + campaignId;
+  el('storeName').textContent = storeName + (city?` — ${city}`:'');
+  el('storeTag').textContent = storeTag;
+  el('ownerCta').href = ownerLink;
+
+  // Gallery swap if custom images provided
+  if(imgs.length){
+    const g = el('gallery'); g.innerHTML='';
+    imgs.slice(0,3).forEach(src=>{ const im = new Image(); im.src=src; im.alt='Store photo'; im.referrerPolicy='no-referrer'; im.loading='lazy'; im.style.borderRadius='12px'; im.style.border='1px solid #2a3e7e'; im.style.width='100%'; im.style.height='120px'; im.style.objectFit='cover'; g.appendChild(im); });
+  }
+
+  // === LocalStorage keys ===
+  const k = (name)=>`qrs_${campaignId}_${name}`;
+  const get = (name, fallback)=>{ try{ return JSON.parse(localStorage.getItem(k(name))) ?? fallback }catch(e){ return fallback } };
+  const set = (name, val)=> localStorage.setItem(k(name), JSON.stringify(val));
+
+  // Unique device flag per campaign
+  const isUnique = !get('seen', false);
+  if(isUnique){ set('seen', true); }
+
+  // Totals (simulate shared state on one device for demo)
+  // In production you would POST to a tiny endpoint or Supabase.
+  const totals = get('totals', {scans:0, uniques:0, shares:0, votes:{yes:0, maybe:0, no:0}});
+  totals.scans += 1;
+  if(isUnique) totals.uniques += 1;
+  set('totals', totals);
+
+  // Render counters
+  function render(){
+    const t = get('totals', {scans:0, uniques:0, shares:0, votes:{yes:0, maybe:0, no:0}});
+    el('scansTotal').textContent = t.scans;
+    el('uniqueScans').textContent = t.uniques;
+    el('shares').textContent = t.shares;
+
+    const positive = t.votes.yes + Math.round(t.votes.maybe*0.5);
+    el('ownerScans').textContent = t.scans;
+    el('ownerVotes').textContent = positive;
+
+    // progress bar = participation rate
+    const totalVotes = t.votes.yes + t.votes.maybe + t.votes.no;
+    const rate = Math.min(100, Math.round((totalVotes / Math.max(10, t.uniques)) * 100));
+    el('voteBar').style.width = rate + '%';
+  }
+  render();
+
+  // === Poll ===
+  const submit = el('submitVote');
+  const see = el('seeResults');
+  const msg = el('voteMsg');
+  submit.addEventListener('click', ()=>{
+    const choice = document.querySelector('input[name="vote"]:checked');
+    if(!choice){ msg.textContent = 'Please choose an option first.'; return; }
+    const t = get('totals', {scans:0, uniques:0, shares:0, votes:{yes:0, maybe:0, no:0}});
+    t.votes[choice.value] = (t.votes[choice.value]||0)+1;
+    set('totals', t);
+    render();
+    msg.textContent = 'Thanks! Unlock full results by sharing with friends.';
+  });
+
+  see.addEventListener('click', ()=>{
+    const t = get('totals', {scans:0, uniques:0, shares:0, votes:{yes:0, maybe:0, no:0}});
+    const tot = t.votes.yes + t.votes.maybe + t.votes.no;
+    const pct = (v)=> tot? Math.round((t.votes[v]/tot)*100):0;
+    msg.innerHTML = `Results now: Yes ${pct('yes')}% · Maybe ${pct('maybe')}% · No ${pct('no')}%`;
+  });
+
+  // === Sharing ===
+  const shareBtn = el('shareBtn');
+  const whatsBtn = el('whatsBtn');
+  const copyBtn = el('copyBtn');
+  const shareMsg = el('shareMsg');
+
+  async function markShare(){
+    const t = get('totals', {scans:0, uniques:0, shares:0, votes:{yes:0, maybe:0, no:0}});
+    t.shares += 1; set('totals', t); render();
+    shareMsg.textContent = 'Thanks for sharing! Full results unlocked for this device.';
+  }
+
+  shareBtn.addEventListener('click', async ()=>{
+    const text = `Help this local shop trend today → ${pageUrl}`;
+    if(navigator.share){
+      try{ await navigator.share({title: storeName, text, url: pageUrl}); await markShare(); }catch(e){ shareMsg.textContent = 'Share canceled.' }
+    } else {
+      shareMsg.textContent = 'Device share not supported. Try WhatsApp or Copy Link.'
+    }
+  });
+
+  whatsBtn.addEventListener('click', ()=>{
+    const msg = encodeURIComponent(`Check this local shop and vote: ${pageUrl}`);
+    const url = /Android|iPhone|iPad/i.test(navigator.userAgent)
+      ? `https://wa.me/?text=${msg}`
+      : `https://web.whatsapp.com/send?text=${msg}`;
+    window.open(url, '_blank');
+    markShare();
+  });
+
+  copyBtn.addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(pageUrl); shareMsg.textContent = 'Link copied to clipboard!'; await markShare(); }
+    catch(e){ shareMsg.textContent = 'Copy failed. Long-press the URL bar to copy.' }
+  });
+
+})();
+</script>
+<script>
+// === Builder add-on (separate block) ===
+(function(){
+  const fab = document.getElementById('fabBuilder');
+  const panel = document.getElementById('builderPanel');
+  if(!fab || !panel) return;
+  fab.addEventListener('click', ()=>{ panel.style.display = panel.style.display==='block'?'none':'block'; });
+
+  const F = { id:'b_id', name:'b_name', city:'b_city', tag:'b_tag', contact:'b_contact', img:'b_img' };
+  const setVal=(k,v)=>{ const el=document.getElementById(F[k]); if(el) el.value=v||''; };
+  setVal('id', (window.__CFG && window.__CFG.id) || new URLSearchParams(location.search).get('id') || 'demo-001');
+  setVal('name', (window.__CFG && window.__CFG.name) || new URLSearchParams(location.search).get('name') || 'Sample Store');
+  setVal('city', (window.__CFG && window.__CFG.city) || new URLSearchParams(location.search).get('city') || '');
+  setVal('tag', (window.__CFG && window.__CFG.tag) || new URLSearchParams(location.search).get('tag') || 'Scan · Vote · Share — Help this shop trend today.');
+  setVal('contact', (window.__CFG && window.__CFG.contact) || new URLSearchParams(location.search).get('contact') || 'mailto:join@youragency.example');
+  setVal('img', (window.__CFG && window.__CFG.img) || new URLSearchParams(location.search).get('img') || '');
+
+  function buildLink(){
+    const v=(k)=>document.getElementById(F[k]).value.trim();
+    const u = new URL(location.origin + location.pathname);
+    if(v('id')) u.searchParams.set('id', v('id'));
+    if(v('name')) u.searchParams.set('name', v('name'));
+    if(v('city')) u.searchParams.set('city', v('city'));
+    if(v('tag')) u.searchParams.set('tag', v('tag'));
+    if(v('contact')) u.searchParams.set('contact', v('contact'));
+    if(v('img')) u.searchParams.set('img', v('img').split(',').map(s=>s.trim()).join(','));
+    return u.toString();
+  }
+
+  const out = document.getElementById('b_out');
+  const byId=(id)=>document.getElementById(id);
+  byId('b_make').addEventListener('click', ()=>{ out.textContent = buildLink(); });
+  byId('b_copy').addEventListener('click', async ()=>{
+    const url = buildLink();
+    try{ await navigator.clipboard.writeText(url); out.textContent='Link copied!'; }catch(e){ out.textContent=url; }
+  });
+  byId('b_download').addEventListener('click', ()=>{
+    const v=(k)=>document.getElementById(F[k]).value.trim();
+    const cfg = { id:v('id')||'demo-001', name:v('name')||'Sample Store', city:v('city')||'', tag:v('tag')||'', contact:v('contact')||'', img:v('img').split(',').map(s=>s.trim()).filter(Boolean).join(',') };
+    const inj = '<script>window.__CFG='+JSON.stringify(cfg).replace(/</g,'\u003c')+'<\/script>';
+    const html = document.documentElement.outerHTML.replace('<head>', '<head>'+inj);
+    const blob = new Blob([html], {type:'text/html'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (cfg.id||'campaign') + '.html';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 800);
+  });
+})();
+</script>
+</body>
+</html>
